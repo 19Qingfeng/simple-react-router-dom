@@ -1,5 +1,6 @@
 import React from 'react';
 import { LocationContext, NavigatorContext } from './context';
+import { matchRoutes } from '../../router';
 
 export function useLocation() {
   return React.useContext(LocationContext);
@@ -12,11 +13,17 @@ export function useLocation() {
  */
 export function useRoutes(routes) {
   const location = useLocation(LocationContext);
-  const { pathname } = location;
-  for (let i = 0; i < routes.length; i++) {
-    const route = routes[i];
-    if (route.path === pathname) {
-      return route.element;
-    }
-  }
+
+  const match = matchRoutes(routes, location);
+  console.log(match, '匹配的路由');
+  return match.route.element;
+}
+
+export function useNavigate() {
+  // TODO: Data Api (useLoaderData) 的实现
+  const { navigator } = React.useContext(NavigatorContext);
+  const navigate = React.useCallback((to, state) => {
+    navigator.push(to, state);
+  }, []);
+  return navigate;
 }

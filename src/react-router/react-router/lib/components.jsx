@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
 import { LocationContext, NavigatorContext } from './context';
 import { useRoutes } from './hooks';
@@ -11,7 +12,7 @@ import { useRoutes } from './hooks';
  */
 export function Router({ children, location, navigator, navigatorType }) {
   return (
-    <NavigatorContext.Provider value={navigator}>
+    <NavigatorContext.Provider value={{navigator}}>
       <LocationContext.Provider value={location}>
         {children}
       </LocationContext.Provider>
@@ -25,7 +26,6 @@ export function Router({ children, location, navigator, navigatorType }) {
  */
 export function Routes({ children }) {
   const routes = createRoutesFromChildren(children);
-  console.log(routes, '当前所有路由列表');
   return useRoutes(routes);
 }
 

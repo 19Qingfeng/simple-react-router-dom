@@ -1,8 +1,9 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-children-prop */
 import { useState } from 'react';
-import { Router } from '../react-router/index.js';
-import { createBrowserHistory, createHashHistory } from '@remix-run/router';
+import { Router, useNavigate } from '../react-router/index.js';
+// import { createBrowserHistory, createHashHistory } from '@remix-run/router';
+import { createBrowserHistory, createHashHistory } from '../router';
 import { useLayoutEffect } from 'react';
 import { useRef } from 'react';
 export { Router, Routes, Route } from '../react-router/index.js';
@@ -22,9 +23,8 @@ export function BrowserRouter({ children }) {
   // 为 history 添加监听函数，当路径发生变化时，会执行 setState 传递最新的路径。
   // 同时重新渲染路由容器组件
   useLayoutEffect(() => {
-    history.listen(() => history.listen(setState));
+    history.listen(setState);
   }, [history]);
-
   return (
     <Router
       children={children}
@@ -62,4 +62,13 @@ export function HashRouter({ children }) {
       navigatorType={state.action}
     />
   );
+}
+
+export function Link({to, state, ...rest}) {
+  const navigate = useNavigate();
+  const handleClick = (e) => {
+    e.preventDefault();
+    navigate(to, state);
+  };
+  return <a onClick={handleClick} {...rest} />;
 }
