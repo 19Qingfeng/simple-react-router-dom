@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation } from "../react-router/react-router-dom";
 
 export function UserDetail() {
   const { state } = useLocation()

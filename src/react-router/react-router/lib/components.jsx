@@ -25,7 +25,9 @@ export function Router({ children, location, navigator, navigatorType }) {
  * @param {*} param0
  */
 export function Routes({ children }) {
+  // 根据 Routes 的 children jsx 元素获取路由列表
   const routes = createRoutesFromChildren(children);
+  console.log(routes,'路由列表')
   return useRoutes(routes);
 }
 
@@ -37,11 +39,21 @@ function createRoutesFromChildren(children) {
   const routes = [];
   React.Children.forEach(children, (child) => {
     if (React.isValidElement(child)) {
-      const { path, element } = child.props;
-      routes.push({ path, element });
+      let route = {
+        path: child.props.path,
+        element: child.props.element
+      }
+      if(child.props.children) {
+        route.children = createRoutesFromChildren(child.props.children)
+      }
+      routes.push(route);
     }
   });
   return routes;
 }
 
 export function Route() {}
+
+export function Outlet() {
+
+}

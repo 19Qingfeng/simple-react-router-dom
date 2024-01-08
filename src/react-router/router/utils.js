@@ -5,19 +5,63 @@
  */
 export function matchRoutes(routes, location) {
   const { pathname } = location;
-  let match = null;
-  // 当前 pathname
-  for (let i = 0; i < routes.length; i++) {
-    match = matchPath(routes[i].path, pathname);
-    if (match) {
-      // 匹配到的时候 为 match({params: {xxx}})
-      // 再次添加一个 route ({ element:xxx,path:xxx })当前路由对象
-      match.route = routes[i];
-      return match;
-    }
-  }
+  // 首先将所有 children 数组打平
+  console.log(routes, 'routes');
+  let branch = flattenRoutes(routes);
+  console.log(branch, 'branch');
   return null;
+  // TODO: old
+  // let match = null;
+  // 当前 pathname
+  // for (let i = 0; i < routes.length; i++) {
+  //   match = matchPath(routes[i].path, pathname);
+  //   if (match) {
+  //     // 匹配到的时候 为 match({params: {xxx}})
+  //     // 再次添加一个 route ({ element:xxx,path:xxx })当前路由对象
+  //     match.route = routes[i];
+  //     return match;
+  //   }
+  // }
+  // return null;
 }
+
+function joinPaths(paths) {
+  return paths.join('/').replace(/\/\/+/g, '/');
+}
+
+function flattenRoutes(
+  routes,
+  branches = [],
+  parentsMeta = [],
+  parentPath = ''
+) {
+  function flattenRoute(route, index) {
+    // 每个分支都有自己的 meta
+    let meta = {
+      relativePath: route.path, // 相对于父路径的路径
+      route, // 此 Meta 对应的路由信息
+      childrenIndex: index // 此 Meta 在父路由的 children 数组中的索引(用于排名计算)
+    };
+    // 当前路由的 path (截止当前路由匹配的 path)
+    let routePath = joinPaths([parentPath, meta.relativePath]);
+    // 将父亲的 meta 拼接自己的 meta 组合成为 routesMeta
+    const routesMeta = parentsMeta.concat(meta);
+    if (route.children && route.children.length > 0) {
+      flattenRoutes(route.children, branches, routesMeta, routePath);
+    }
+    branches.push({
+      path: routePath,
+      routesMeta
+    });
+  }
+
+  routes.forEach((route, index) => {
+    flattenRoute(route, index);
+  });
+  return branches;
+}
+
+
 
 export function matchPath(path, pathname) {
   // 将路径转化为正则

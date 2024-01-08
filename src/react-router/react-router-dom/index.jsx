@@ -6,7 +6,16 @@ import { Router, useNavigate } from '../react-router/index.js';
 import { createBrowserHistory, createHashHistory } from '../router';
 import { useLayoutEffect } from 'react';
 import { useRef } from 'react';
-export { Router, Routes, Route } from '../react-router/index.js';
+export {
+  Router,
+  Routes,
+  Route,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useParams,
+  useRoutes
+} from '../react-router/index.js';
 
 export function BrowserRouter({ children }) {
   const historyRef = useRef();
@@ -64,7 +73,7 @@ export function HashRouter({ children }) {
   );
 }
 
-export function Link({to, state, ...rest}) {
+export function Link({ to, state, ...rest }) {
   const navigate = useNavigate();
   const handleClick = (e) => {
     e.preventDefault();

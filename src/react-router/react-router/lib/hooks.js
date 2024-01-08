@@ -13,6 +13,9 @@ export function useLocation() {
  */
 export function useRoutes(routes) {
   const location = useLocation(LocationContext);
+  const { pathname } = location;
+  let matches = matchRoutes(routes, { pathname });
+  
 
   const match = matchRoutes(routes, location);
   console.log(match, '匹配的路由');
@@ -27,3 +30,5 @@ export function useNavigate() {
   }, []);
   return navigate;
 }
+
+export function useParams() {}
