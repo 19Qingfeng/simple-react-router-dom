@@ -1,7 +1,11 @@
-import { Link } from '../react-router/react-router-dom';
+import { Link, useParams } from '../react-router/react-router-dom';
 import { Outlet } from '../react-router/react-router-dom';
 
 function User() {
+
+  const params = useParams()
+  console.log('user params,',params)
+
   return (
     <div>
       <ul>

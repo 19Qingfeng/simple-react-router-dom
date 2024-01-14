@@ -1,8 +1,12 @@
-import { useLocation } from "../react-router/react-router-dom";
+import { useLocation, useParams } from "../react-router/react-router-dom";
 
 export function UserDetail() {
+
+  const params = useParams()
+
   const { state } = useLocation()
   return <div>
-    用户:<p>{state?.userName}</p>
+    <p>用户:{state?.userName}</p>
+    <p>数据:{params?.id}</p>
   </div>
 }

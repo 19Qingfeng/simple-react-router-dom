@@ -60,6 +60,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
 
       {/* TODO: 路由优先级，源码中具体规则 */}
+      {/* 暂时先保留一个 User，因为优先级多个匹配有问题 */}
       {/* <Route path="/a/b" element={<Home />} /> */}
       {/* <Route path="/a/:id" element={<Profile />} /> */}
     </Routes>

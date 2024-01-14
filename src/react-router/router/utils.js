@@ -1,4 +1,5 @@
 /**
+ * TODO: 一步一步看 TODO:!!!
  * 根据 routes/当前 pathname 列表寻找匹配的路由
  * @param {*} routes 路由列表
  * @param {*} location 当前路由对象 { pathname,state }
@@ -6,10 +7,16 @@
 export function matchRoutes(routes, location) {
   const { pathname } = location;
   // 首先将所有 children 数组打平
-  console.log(routes, 'routes');
-  let branch = flattenRoutes(routes);
-  console.log(branch, 'branch');
-  return null;
+  let branches = flattenRoutes(routes);
+  let matches = null;
+
+  for (let i = 0; matches === null && i < branches.length; i++) {
+    const branch = branches[i];
+    matches = matchRouteBranches(branch, pathname);
+  }
+
+  console.log(matches, 'matches route');
+  return matches;
   // TODO: old
   // let match = null;
   // 当前 pathname
@@ -25,8 +32,39 @@ export function matchRoutes(routes, location) {
   // return null;
 }
 
-function joinPaths(paths) {
-  return paths.join('/').replace(/\/\/+/g, '/');
+function matchRouteBranches(branch, pathname) {
+  let { routesMeta } = branch;
+  let matchPathName = '/'; // 目前已经匹配到的路径名
+  let matchParams = {}; // 记录路由参数对象
+  let matches = [];
+
+  for (let i = 0; i < routesMeta.length; i++) {
+    // 获取当前路由对象的 relativePath  (['/user','detail/:id'])
+    const { relativePath, route } = routesMeta[i];
+    // 判断是否为最后一个 meta
+    const end = routesMeta.length - 1 === i;
+    // 剩余需要匹配的路径名
+    let remainingPathname =
+      matchPathName === '/'
+        ? pathname
+        : pathname.slice(matchPathName.length) || '';
+    // 路径匹配(最后一个路径时需要末尾匹配)
+    const match = matchPath({ path: relativePath, end }, remainingPathname);
+    if (!match) {
+      return null;
+    }
+    // 添加路由 Params TODO: 源码也是这么写的，得看看 Demo 对比下（父是否可以拿到子的 params，理论上应该是可以的）
+    Object.assign(matchParams, match.params);
+    // 重新计算当前已经匹配到的路径名 matchPathName(已经匹配过的路径) + match.pathname(本次匹配的路径)
+    matchPathName = joinPaths([matchPathName, match.pathname]);
+    // 将匹配到的结果放入
+    matches.push({
+      params: matchParams,
+      route,
+      pathname: matchPathName // 当前 matches 中匹配到的路由
+    });
+  }
+  return matches;
 }
 
 function flattenRoutes(
@@ -38,8 +76,8 @@ function flattenRoutes(
   function flattenRoute(route, index) {
     // 每个分支都有自己的 meta
     let meta = {
-      relativePath: route.path, // 相对于父路径的路径
-      route, // 此 Meta 对应的路由信息
+      relativePath: route.path, // 此路由相对于父路径的路径
+      route, // 此 Meta 对应的路由信息，保存当前路由 path 以及 element
       childrenIndex: index // 此 Meta 在父路由的 children 数组中的索引(用于排名计算)
     };
     // 当前路由的 path (截止当前路由匹配的 path)
@@ -58,42 +96,65 @@ function flattenRoutes(
   routes.forEach((route, index) => {
     flattenRoute(route, index);
   });
+  console.log(branches, 'branches');
   return branches;
 }
 
-
-
-export function matchPath(path, pathname) {
+/**
+ * 检查路径是否匹配
+ * @param {*} path 需要匹配的 pathname
+ * @param {*} pathname 当前 pathname
+ * @returns
+ */
+export function matchPath({ path, end }, pathname) {
   // 将路径转化为正则
   // matcher 为当前路径匹配的正则规则，  paramsName 为路径参数的集合
-  const [matcher, paramsName] = compilePath(path);
+  const [matcher, paramsName] = compilePath(path, end);
   let match = pathname.match(matcher);
   // 未匹配到（不符合）
   if (!match) return null;
+  let matchPathName = match[0]; // 匹配到的路径名
   let captureGroups = match.slice(1); // 捕获的参数值分组
   let params = paramsName.reduce((prev, cur, index) => {
     prev[cur] = captureGroups[index];
     return prev;
   }, {});
   return {
-    params
+    params,
+    pathname: matchPathName
   };
 }
 
+/**
+ * 将路径转为正则
+ * @param {*} path
+ * @param {*} end
+ * @returns
+ */
 function compilePath(path, end = true) {
   let paramsNames = [];
   // /home/:id => /home/([^\\/]+)
   let regexpSource =
     '^' +
-    path.replace(/\/:(\w+)/g, (_, paramName) => {
-      // paramName 为匹配到的第一个分组，既为 name 的 key
-      paramsNames.push(paramName);
-      return '/([^\\/]+)';
-    });
+    path
+      // 分段匹配替换不存在 / 时，增加 /。 Make sure it has a leading / (将非 / 开头的转为 / （开头增加 /）)
+      .replace(/^\/*/, '/')
+      // Ignore trailing / 忽略路径尾部的 /
+      .replace(/\/+$/, '')
+      // 将动态路由参数转化为具体数值正则匹配
+      .replace(/\/:(\w+)/g, (_, paramName) => {
+        // paramName 为匹配到的第一个分组，既为 name 的 key
+        paramsNames.push(paramName);
+        return '/([^\\/]+)';
+      });
 
   if (end) {
     regexpSource += '\\/*$';
   }
   let matcher = new RegExp(regexpSource);
   return [matcher, paramsNames];
+}
+
+function joinPaths(paths) {
+  return paths.join('/').replace(/\/\/+/g, '/');
 }

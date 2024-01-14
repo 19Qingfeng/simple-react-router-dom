@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import { LocationContext, NavigatorContext } from './context';
-import { useRoutes } from './hooks';
+import { useOutlet, useRoutes } from './hooks';
 
 /**
  * 该组件为跨平台（适应任何平台下的）路由容器组件
@@ -55,5 +55,5 @@ function createRoutesFromChildren(children) {
 export function Route() {}
 
 export function Outlet() {
-
+  return useOutlet()
 }
