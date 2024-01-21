@@ -5,7 +5,8 @@ import {
   HashRouter,
   Routes,
   Route,
-  Link
+  Link,
+  NavLink
 } from './react-router/react-router-dom';
 import Home from './components/Home';
 import User from './components/User';
@@ -13,6 +14,7 @@ import Profile from './components/Profile';
 import { UserList } from './components/UserList';
 import { UserAdd } from './components/UserAdd';
 import { UserDetail } from './components/UserDetail';
+import { NotFind } from './components/NotFind';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <BrowserRouter>
@@ -28,14 +30,15 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </Link>
       </li>
       <li>
-        <Link
+        <NavLink
           to="/user"
+          style={({ isActive }) => isActive ? {color:'red'} :undefined}
           state={{
             name: '用户'
           }}
         >
           用户
-        </Link>
+        </NavLink>
       </li>
       <li>
         <Link
@@ -49,7 +52,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       </li>
     </ul>
     <Routes>
-      <Route path="/" element={<Home />} />
+      {/* <Route path="/" element={<Home />} /> */}
      
       <Route path="/user" element={<User />}>
         <Route path="list" element={<UserList />} />
@@ -57,6 +60,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="detail/:id" element={<UserDetail />} />
       </Route>
       <Route path="/profile" element={<Profile />} />
+      <Route path="*" element={<NotFind />} />
+
 
 
       {/* TODO: 路由优先级，源码中具体规则 */}

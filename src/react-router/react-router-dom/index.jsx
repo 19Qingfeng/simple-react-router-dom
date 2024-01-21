@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-children-prop */
 import { useState } from 'react';
-import { Router, useNavigate } from '../react-router/index.js';
+import { Router, useLocation, useNavigate } from '../react-router/index.js';
 // import { createBrowserHistory, createHashHistory } from '@remix-run/router';
 import { createBrowserHistory, createHashHistory } from '../router';
 import { useLayoutEffect } from 'react';
@@ -80,4 +80,20 @@ export function Link({ to, state, ...rest }) {
     navigate(to, state);
   };
   return <a onClick={handleClick} {...rest} />;
+}
+
+/**
+ * 导航链接
+ * @param {*} param0 
+ */
+export function NavLink({ to, state, className: classNameProps, style: styleProps, end = false, ...rest }) {
+  // 获取当前页面路径 TODO: 动态路由未处理
+  let { pathname } = useLocation()
+  console.log(pathname,'pathname',pathname.chatAt)
+  let isActive = pathname === to || (!end && pathname.startsWith(to) && pathname.charAt(to.length) === '/')
+
+  let className = classNameProps && classNameProps({ isActive })
+  let style = styleProps && styleProps({ isActive })
+
+  return <Link className={className} style={style} to={to} state={state} {...rest} />
 }

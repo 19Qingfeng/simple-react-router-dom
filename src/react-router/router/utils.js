@@ -1,4 +1,74 @@
 /**
+ * 匹配路径参数正则
+ */
+const paramRe = /^:[\w-]+$/;
+/**
+ * 动态路由
+ */
+const dynamicSegmentValue = 3;
+/**
+ * 跟路由
+ */
+const indexRouteValue = 2;
+/**
+ * 空的路由
+ */
+const emptySegmentValue = 1;
+/**
+ * 静态(固定路径 比如 /user/list) 中 user 和 list 都是 static 片段
+ */
+const staticSegmentValue = 10;
+/**
+ * 通配符
+ */
+const splatPenalty = -2;
+const isSplat = (s) => s === '*';
+
+/**
+ * 计算每一个路径对应的分数
+ * 用于路由路径优先级匹配
+ * (相同路由路径匹配下) 纯静态 >> 动态 >> 通配符
+ * @param {*} path
+ * @param {*} index
+ */
+function computedScore(path, index) {
+  let segments = path.split('/');
+  // 初始分为片段长度
+  let initialScore = segments.length;
+  // 该路由路径中如果存在单个通配符（*） 减分
+  if (segments.some(isSplat)) {
+    initialScore += splatPenalty;
+  }
+  // TODO: 这里的 index 需要 debugger 源码，具体为了区别啥
+  // TODO: debugger 下 单/ 的分数
+  if (index) {
+    initialScore += indexRouteValue;
+  }
+
+  return (
+    segments
+      // 首先过滤该路由数组中的通配符(*)，拿到费 * 片段
+      .filter((s) => !isSplat(s))
+      .reduce(
+        (score, segment) =>
+          score +
+          (paramRe.test(segment)
+            ? dynamicSegmentValue
+            : segment === ''
+            ? emptySegmentValue
+            : staticSegmentValue),
+        initialScore
+      )
+  );
+}
+
+/**
+ * 比较路由先后顺序
+ * 优先分数 其次 索引(childrenIndex) TODO: 对照源码
+ */
+function rankRouteBranches() {}
+
+/**
  * TODO: 一步一步看 TODO:!!!
  * 根据 routes/当前 pathname 列表寻找匹配的路由
  * @param {*} routes 路由列表
@@ -8,6 +78,8 @@ export function matchRoutes(routes, location) {
   const { pathname } = location;
   // 首先将所有 children 数组打平
   let branches = flattenRoutes(routes);
+  // 按照分数对于路由进行排序
+  rankRouteBranches();
   let matches = null;
 
   for (let i = 0; matches === null && i < branches.length; i++) {
@@ -15,21 +87,7 @@ export function matchRoutes(routes, location) {
     matches = matchRouteBranches(branch, pathname);
   }
 
-  console.log(matches, 'matches route');
   return matches;
-  // TODO: old
-  // let match = null;
-  // 当前 pathname
-  // for (let i = 0; i < routes.length; i++) {
-  //   match = matchPath(routes[i].path, pathname);
-  //   if (match) {
-  //     // 匹配到的时候 为 match({params: {xxx}})
-  //     // 再次添加一个 route ({ element:xxx,path:xxx })当前路由对象
-  //     match.route = routes[i];
-  //     return match;
-  //   }
-  // }
-  // return null;
 }
 
 function matchRouteBranches(branch, pathname) {
@@ -89,7 +147,8 @@ function flattenRoutes(
     }
     branches.push({
       path: routePath,
-      routesMeta
+      routesMeta,
+      score: computedScore(routePath, index)
     });
   }
 
@@ -137,10 +196,12 @@ function compilePath(path, end = true) {
   let regexpSource =
     '^' +
     path
+      // 忽略 URL 尾部的 /* 或者 * 或者 ////* (处理通配符)
+      .replace(/\/*\*?$/, '')
       // 分段匹配替换不存在 / 时，增加 /。 Make sure it has a leading / (将非 / 开头的转为 / （开头增加 /）)
       .replace(/^\/*/, '/')
       // Ignore trailing / 忽略路径尾部的 /
-      .replace(/\/+$/, '')
+      // .replace(/\/+$/, '')
       // 将动态路由参数转化为具体数值正则匹配
       .replace(/\/:(\w+)/g, (_, paramName) => {
         // paramName 为匹配到的第一个分组，既为 name 的 key
@@ -148,9 +209,22 @@ function compilePath(path, end = true) {
         return '/([^\\/]+)';
       });
 
-  if (end) {
+  // 如何 path 以 * 结尾，path 中间的*不会认为是任意匹配，只会当 path 结尾为 * 时才代表任意匹配
+  if (path.endsWith('*')) {
+    paramsNames.push('*');
+    // 此时需要判断该路由 * 是否为唯一路径
+    regexpSource +=
+      path === '*' || path === '/*'
+        ? // 该路径下全匹配
+          '(.*)$'
+        : // 非全路径时，匹配时候忽略后部单个 /
+          // 比如 /home/123 则 params 为 { *:123 }
+          // /home//// params 为 { *: /// }
+          '(?:\\/(.+)|\\/*)$';
+  } else if (end) {
     regexpSource += '\\/*$';
   }
+
   let matcher = new RegExp(regexpSource);
   return [matcher, paramsNames];
 }

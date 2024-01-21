@@ -18,7 +18,6 @@ export function useRoutes(routes) {
   let matches = matchRoutes(routes, { pathname });
 
   // const match = matchRoutes(routes, location);
-  console.log(matches, '匹配的路由');
   if (matches) {
     return renderMatches(matches);
   }
